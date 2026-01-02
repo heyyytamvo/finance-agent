@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	swaggerFiles "github.com/swaggo/files"
+  ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Server struct {
@@ -31,6 +33,8 @@ func (s *Server) Run(addr string) error {
 func (s *Server) routes() {
 	s.router.GET("/health", s.health)
 	s.router.GET("/hello", s.hello)
+	// Swagger endpoint
+  s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 func (s *Server) health(c *gin.Context) {
