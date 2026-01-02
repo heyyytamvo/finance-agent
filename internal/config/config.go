@@ -13,7 +13,7 @@ type Config struct {
 	AuthMechanism  string
 	Username     string
   Password      string
-  MongoDB     string
+  MongoDatabase     string
 }
 
 var (
@@ -36,7 +36,7 @@ func Load() *Config {
 //   			AuthMechanism:  os.Getenv("AUTHENMECHANISM"),
   			Username:       os.Getenv("MONGO_ADMIN_USER"),
   			Password:       os.Getenv("MONGO_ADMIN_PASSWORD"),
-  			MongoDB:        os.Getenv("MONGO_DB"),
+  			MongoDatabase:  os.Getenv("MONGO_DATABASE"),
   		}
   	})
   	return cfg

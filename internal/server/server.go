@@ -4,26 +4,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 	swaggerFiles "github.com/swaggo/files"
   ginSwagger "github.com/swaggo/gin-swagger"
+  "my-finance-app/internal/services/spending"
 )
 
 type Server struct {
-	router *gin.Engine
-	db     *mongo.Database
+	router          *gin.Engine
+  SpendingService *spending.Service
 }
 
-func New(db *mongo.Database) *Server {
+func New(spService *spending.Service) *Server {
 	r := gin.Default()
 
-	s := &Server{
-		router: r,
-		db:     db,
-	}
+  s := &Server{
+    router:          r,
+    SpendingService: spService,
+  }
 
-	s.routes()
-	return s
+  s.routes()
+  return s
 }
 
 func (s *Server) Run(addr string) error {
@@ -33,6 +33,7 @@ func (s *Server) Run(addr string) error {
 func (s *Server) routes() {
 	s.router.GET("/health", s.health)
 	s.router.GET("/hello", s.hello)
+	s.router.POST("/spendings", s.createSpending)
 	// Swagger endpoint
   s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -47,4 +48,21 @@ func (s *Server) hello(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Hello world",
 	})
+}
+
+// CreateSpending handles POST /spendings
+func (s *Server) createSpending(c *gin.Context) {
+	var sp spending.Spending
+	if err := c.ShouldBindJSON(&sp); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	created, err := s.SpendingService.Create(c.Request.Context(), sp)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, created)
 }

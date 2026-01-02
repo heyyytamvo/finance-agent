@@ -1,0 +1,23 @@
+package spending
+
+import (
+	"context"
+	"errors"
+)
+
+// Service handles business logic for Spending
+type Service struct {
+	Repo *Repository
+}
+
+// Create validates and inserts a new spending record
+func (s *Service) Create(ctx context.Context, spending Spending) (*Spending, error) {
+	if spending.Amount <= 0 {
+		return nil, errors.New("amount must be greater than 0")
+	}
+	if spending.Type == "" {
+		return nil, errors.New("type is required")
+	}
+
+	return s.Repo.Insert(ctx, spending)
+}
