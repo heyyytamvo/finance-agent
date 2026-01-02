@@ -34,6 +34,7 @@ func (s *Server) routes() {
 	s.router.GET("/health", s.health)
 	s.router.GET("/hello", s.hello)
 	s.router.POST("/spendings", s.createSpending)
+	s.router.GET("/spendings", s.getAllSpendings)
 	// Swagger endpoint
   s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -65,4 +66,15 @@ func (s *Server) createSpending(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, created)
+}
+
+// getAllSpendings handles GET /spendings
+func (s *Server) getAllSpendings(c *gin.Context) {
+	spendings, err := s.SpendingService.GetAll(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, spendings)
 }

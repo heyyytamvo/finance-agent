@@ -21,3 +21,8 @@ func (s *Service) Create(ctx context.Context, spending Spending) (*Spending, err
 
 	return s.Repo.Insert(ctx, spending)
 }
+
+// GetAll returns all spending records
+func (s *Service) GetAll(ctx context.Context) ([]Spending, error) {
+	return s.Repo.FindAll(ctx)
+}

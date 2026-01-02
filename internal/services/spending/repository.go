@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Repository handles MongoDB operations for Spending
@@ -32,4 +33,30 @@ func (r *Repository) Insert(ctx context.Context, s Spending) (*Spending, error) 
 	}
 
 	return &s, nil
+}
+
+// FindAll retrieves all spending records from MongoDB
+func (r *Repository) FindAll(ctx context.Context) ([]Spending, error) {
+	collection := r.DB.Collection("spendings")
+
+	cursor, err := collection.Find(ctx, bson.M{}) // empty filter = all records
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var spendings []Spending
+	for cursor.Next(ctx) {
+		var s Spending
+		if err := cursor.Decode(&s); err != nil {
+			return nil, err
+		}
+		spendings = append(spendings, s)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return spendings, nil
 }
