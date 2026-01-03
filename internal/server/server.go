@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -36,7 +37,8 @@ func (s *Server) routes() {
 	s.router.POST("/spendings", s.createSpending)
 	s.router.GET("/spendings", s.getAllSpendings)
 // 	s.router.GET("/spendings/filter", s.getSpendingsByCategory)
-  s.router.GET("/spendings/total", s.getCostByCategory)
+//   s.router.GET("/spendings/total", s.getCostByCategory)
+  s.router.GET("spendings/total", s.getCostByCategoryRange)
 	// Swagger endpoint
   s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -111,6 +113,45 @@ func (s *Server) getCostByCategory(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"type":  category, // empty string if not specified
+		"total": total,
+	})
+}
+
+// getCostByCategoryRange handles GET /spending/total
+func (s *Server) getCostByCategoryRange(c *gin.Context) {
+	category := c.Query("type")
+
+	var from, to *time.Time
+	fromStr := c.Query("from")
+	toStr := c.Query("to")
+
+	if fromStr != "" {
+		t, err := time.Parse(time.RFC3339, fromStr)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "invalid from date"})
+			return
+		}
+		from = &t
+	}
+	if toStr != "" {
+		t, err := time.Parse(time.RFC3339, toStr)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "invalid to date"})
+			return
+		}
+		to = &t
+	}
+
+	total, err := s.SpendingService.GetCostByCategoryAndRange(c.Request.Context(), category, from, to)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"type":  category,
+		"from":  fromStr,
+		"to":    toStr,
 		"total": total,
 	})
 }

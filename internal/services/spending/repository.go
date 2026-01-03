@@ -99,3 +99,58 @@ func (r *Repository) SumByCategory(ctx context.Context, category string) (float6
 	// no records found
 	return 0, nil
 }
+
+// SumByCategoryAndRange returns total spending for a category (or all if empty) in a given date range
+func (r *Repository) SumByCategoryAndRange(ctx context.Context, category string, from, to *time.Time) (float64, error) {
+	collection := r.DB.Collection("spendings")
+
+	// Build aggregation pipeline
+	pipeline := []bson.M{}
+
+	// Match stage
+	match := bson.M{}
+	if category != "" {
+		match["type"] = category
+	}
+	if from != nil || to != nil {
+		dateFilter := bson.M{}
+		if from != nil {
+			dateFilter["$gte"] = *from
+		}
+		if to != nil {
+			dateFilter["$lte"] = *to
+		}
+		match["date"] = dateFilter
+	}
+	if len(match) > 0 {
+		pipeline = append(pipeline, bson.M{"$match": match})
+	}
+
+	// Group stage to sum amounts
+	pipeline = append(pipeline, bson.M{
+		"$group": bson.M{
+			"_id":   nil,
+			"total": bson.M{"$sum": "$amount"},
+		},
+	})
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, err
+	}
+	defer cursor.Close(ctx)
+
+	var res struct {
+		Total float64 `bson:"total"`
+	}
+
+	if cursor.Next(ctx) {
+		if err := cursor.Decode(&res); err != nil {
+			return 0, err
+		}
+		return res.Total, nil
+	}
+
+	// no records found
+	return 0, nil
+}

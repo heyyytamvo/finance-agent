@@ -3,6 +3,7 @@ package spending
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 // Service handles business logic for Spending
@@ -36,4 +37,9 @@ func (s *Service) GetAll(ctx context.Context) ([]Spending, error) {
 // GetCostByCategory returns total spending for a category, or all if category is empty
 func (s *Service) GetCostByCategory(ctx context.Context, category string) (float64, error) {
 	return s.Repo.SumByCategory(ctx, category)
+}
+
+// GetCostByCategoryAndRange calculates total spending for a category (or all) in a date range
+func (s *Service) GetCostByCategoryAndRange(ctx context.Context, category string, from, to *time.Time) (float64, error) {
+	return s.Repo.SumByCategoryAndRange(ctx, category, from, to)
 }
