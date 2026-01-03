@@ -22,22 +22,28 @@ var (
 )
 
 func Load() *Config {
+	once.Do(func() {
+		ginMode := os.Getenv("GIN_MODE")
 
-  once.Do(func() {
-  		err := godotenv.Load()
-  		if err != nil {
-  			log.Fatal("❌ .env file NOT loaded")
-  		}
-  		log.Println("✅ .env file loaded")
+		if ginMode != "release" {
+			// Load .env ONLY in non-release mode
+			if err := godotenv.Load(); err != nil {
+				log.Println("⚠️ .env file not loaded (non-release mode)")
+			} else {
+				log.Println("✅ .env file loaded")
+			}
+		} else {
+			log.Println("🚀 Running in RELEASE mode, using environment variables")
+		}
 
+		cfg = &Config{
+			MongoURI:      os.Getenv("MONGO_URI"),
+			Username:      os.Getenv("MONGO_ADMIN_USER"),
+			Password:      os.Getenv("MONGO_ADMIN_PASSWORD"),
+			MongoDatabase: os.Getenv("MONGO_DATABASE"),
+		}
+	})
 
-  		cfg = &Config{
-  			MongoURI:       os.Getenv("MONGO_URI"),
-//   			AuthMechanism:  os.Getenv("AUTHENMECHANISM"),
-  			Username:       os.Getenv("MONGO_ADMIN_USER"),
-  			Password:       os.Getenv("MONGO_ADMIN_PASSWORD"),
-  			MongoDatabase:  os.Getenv("MONGO_DATABASE"),
-  		}
-  	})
-  	return cfg
+	return cfg
 }
+
