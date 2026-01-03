@@ -60,3 +60,32 @@ func (r *Repository) FindAll(ctx context.Context) ([]Spending, error) {
 
 	return spendings, nil
 }
+
+// FindByType retrieves all spending records with the given category/type
+func (r *Repository) FindByType(ctx context.Context, category string) ([]Spending, error) {
+	collection := r.DB.Collection("spendings")
+
+	// Filter by type/category
+	filter := bson.M{"type": category}
+
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var spendings []Spending
+	for cursor.Next(ctx) {
+		var s Spending
+		if err := cursor.Decode(&s); err != nil {
+			return nil, err
+		}
+		spendings = append(spendings, s)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return spendings, nil
+}

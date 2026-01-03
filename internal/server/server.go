@@ -35,6 +35,7 @@ func (s *Server) routes() {
 	s.router.GET("/hello", s.hello)
 	s.router.POST("/spendings", s.createSpending)
 	s.router.GET("/spendings", s.getAllSpendings)
+	s.router.GET("/spendings/filter", s.getSpendingsByCategory)
 	// Swagger endpoint
   s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -71,6 +72,23 @@ func (s *Server) createSpending(c *gin.Context) {
 // getAllSpendings handles GET /spendings
 func (s *Server) getAllSpendings(c *gin.Context) {
 	spendings, err := s.SpendingService.GetAll(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, spendings)
+}
+
+// getAllSpendings handles GET /spending
+func (s *Server) getSpendingsByCategory(c *gin.Context) {
+	category := c.Query("type") // GET /spendings?type=groceries
+	if category == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type query parameter required"})
+		return
+	}
+
+	spendings, err := s.SpendingService.GetByCategory(c.Request.Context(), category)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

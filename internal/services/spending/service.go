@@ -26,3 +26,9 @@ func (s *Service) Create(ctx context.Context, spending Spending) (*Spending, err
 func (s *Service) GetAll(ctx context.Context) ([]Spending, error) {
 	return s.Repo.FindAll(ctx)
 }
+
+
+// GetByCategory returns all spending records for a category/type
+func (s *Service) GetByCategory(ctx context.Context, category string) ([]Spending, error) {
+	return s.Repo.FindByType(ctx, category)
+}
