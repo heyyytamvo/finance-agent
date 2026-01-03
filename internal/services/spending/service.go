@@ -28,7 +28,12 @@ func (s *Service) GetAll(ctx context.Context) ([]Spending, error) {
 }
 
 
-// GetByCategory returns all spending records for a category/type
-func (s *Service) GetByCategory(ctx context.Context, category string) ([]Spending, error) {
-	return s.Repo.FindByType(ctx, category)
+// // GetByCategory returns all spending records for a category/type
+// func (s *Service) GetByCategory(ctx context.Context, category string) ([]Spending, error) {
+// 	return s.Repo.FindByType(ctx, category)
+// }
+
+// GetCostByCategory returns total spending for a category, or all if category is empty
+func (s *Service) GetCostByCategory(ctx context.Context, category string) (float64, error) {
+	return s.Repo.SumByCategory(ctx, category)
 }

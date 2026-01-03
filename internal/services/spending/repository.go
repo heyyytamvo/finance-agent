@@ -61,31 +61,41 @@ func (r *Repository) FindAll(ctx context.Context) ([]Spending, error) {
 	return spendings, nil
 }
 
-// FindByType retrieves all spending records with the given category/type
-func (r *Repository) FindByType(ctx context.Context, category string) ([]Spending, error) {
+// FindByType retrieves all spending records with/without the given category/type
+func (r *Repository) SumByCategory(ctx context.Context, category string) (float64, error) {
 	collection := r.DB.Collection("spendings")
 
-	// Filter by type/category
-	filter := bson.M{"type": category}
+	pipeline := []bson.M{}
 
-	cursor, err := collection.Find(ctx, filter)
+	if category != "" {
+		pipeline = append(pipeline, bson.M{"$match": bson.M{"type": category}})
+	}
+
+	pipeline = append(pipeline, bson.M{
+		"$group": bson.M{
+			"_id":   nil,
+			"total": bson.M{"$sum": "$amount"},
+		},
+	})
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	defer cursor.Close(ctx)
 
-	var spendings []Spending
-	for cursor.Next(ctx) {
-		var s Spending
-		if err := cursor.Decode(&s); err != nil {
-			return nil, err
+	// decode directly into a struct
+	var res struct {
+		Total float64 `bson:"total"`
+	}
+
+	if cursor.Next(ctx) {
+		if err := cursor.Decode(&res); err != nil {
+			return 0, err
 		}
-		spendings = append(spendings, s)
+		return res.Total, nil
 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-
-	return spendings, nil
+	// no records found
+	return 0, nil
 }
